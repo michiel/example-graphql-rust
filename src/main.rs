@@ -6,35 +6,97 @@
 //! can run in parallel and process messages from same queue.
 extern crate serde;
 extern crate serde_json;
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate diesel;
+#[macro_use] extern crate serde_derive;
+#[macro_use] extern crate diesel;
 extern crate r2d2;
 extern crate uuid;
 extern crate futures;
 extern crate actix;
 extern crate actix_web;
 extern crate env_logger;
+#[macro_use] extern crate juniper;
 
 use actix::prelude::*;
 use actix_web::{http, server, middleware,
-                App, Path, State, HttpResponse, AsyncResponder, FutureResponse};
+                App, Path, State, HttpRequest, HttpResponse, HttpMessage, AsyncResponder, FutureResponse, Error
+};
 
 use diesel::prelude::*;
 use diesel::r2d2::{ Pool, ConnectionManager };
 use futures::future::Future;
 
+use juniper::http::graphiql::graphiql_source;
+use juniper::http::GraphQLRequest;
+
 mod db;
 mod models;
-mod schema;
+mod database_schema;
+mod graphql_schema;
 
 use db::{CreateUser, DbExecutor};
 
+use graphql_schema::{Schema, create_schema};
 
+#[derive(Serialize, Deserialize)]
+pub struct GraphQLData(GraphQLRequest);
+
+impl Message for GraphQLData {
+    type Result = Result<String, Error>;
+}
+
+pub struct GraphQLExecutor {
+    schema: std::sync::Arc<Schema>
+}
+
+impl GraphQLExecutor {
+    fn new(schema: std::sync::Arc<Schema>) -> GraphQLExecutor {
+        GraphQLExecutor {
+            schema: schema,
+        }
+    }
+}
+
+impl Actor for GraphQLExecutor {
+    type Context = SyncContext<Self>;
+}
+
+impl Handler<GraphQLData> for GraphQLExecutor {
+    type Result = Result<String, Error>;
+
+    fn handle(&mut self, msg: GraphQLData, _: &mut Self::Context) -> Self::Result {
+        let res = msg.0.execute(&self.schema, &());
+        let res_text = serde_json::to_string(&res)?;
+        Ok(res_text)
+    }
+}
+
+fn graphiql(_req: HttpRequest<AppState>) -> Result<HttpResponse, Error>  {
+    let html = graphiql_source("http://127.0.0.1:8080/graphql");
+    Ok(HttpResponse::Ok()
+        .content_type("text/html; charset=utf-8")
+        .body(html))
+}
+
+fn graphql(req: HttpRequest<AppState>) -> Box<Future<Item=HttpResponse, Error=Error>> {
+    let executor = req.state().executor.clone();
+    req.json()
+        .from_err()
+        .and_then(move |val: GraphQLData| {
+            executor.send(val)
+                .from_err()
+                .and_then(|res| {
+                    match res {
+                        Ok(user) => Ok(HttpResponse::Ok().header(http::header::CONTENT_TYPE, "application/json").body(user)),
+                        Err(_) => Ok(HttpResponse::InternalServerError().into())
+                    }
+                })
+        })
+        .responder()
+}
 /// State with DbExecutor address
 struct AppState {
     db: Addr<Syn, DbExecutor>,
+    executor: Addr<Syn, GraphQLExecutor>,
 }
 
 /// Async request handler
@@ -60,17 +122,29 @@ fn main() {
     let manager = ConnectionManager::<SqliteConnection>::new("test.db");
     let pool = r2d2::Pool::builder().build(manager).expect("Failed to create pool.");
 
-    let addr = SyncArbiter::start(3, move || {
+    let db_addr = SyncArbiter::start(3, move || {
         DbExecutor(pool.clone())
+    });
+
+    let schema = std::sync::Arc::new(create_schema());
+    let gq_addr = SyncArbiter::start(3, move || {
+        GraphQLExecutor::new(schema.clone())
     });
 
     // Start http server
     server::new(move || {
-        App::with_state(AppState{db: addr.clone()})
-            // enable logger
-            .middleware(middleware::Logger::default())
-            .resource("/{name}", |r| r.method(http::Method::GET).with2(index))})
-        .bind("127.0.0.1:8080").unwrap()
+        App::with_state(AppState{
+            db: db_addr.clone(),
+            executor: gq_addr.clone(),
+        })
+        // enable logger
+        .middleware(middleware::Logger::default())
+            .resource("/{name}", |r| r.method(http::Method::GET).with2(index))
+            .resource("/graphql", |r| r.method(http::Method::POST).h(graphql))
+            .resource("/graphiql", |r| r.method(http::Method::GET).h(graphiql))
+    })
+    .bind("127.0.0.1:8080")
+        .unwrap()
         .start();
 
     println!("Started http server: 127.0.0.1:8080");

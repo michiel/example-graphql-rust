@@ -7,7 +7,7 @@ use diesel::prelude::*;
 use diesel::r2d2::{ Pool, ConnectionManager };
 
 use models;
-use schema;
+use database_schema;
 
 /// This is db executor actor. We are going to run 3 of them in parallel.
 pub struct DbExecutor(pub Pool<ConnectionManager<SqliteConnection>>);
@@ -30,7 +30,7 @@ impl Handler<CreateUser> for DbExecutor {
     type Result = Result<models::User, Error>;
 
     fn handle(&mut self, msg: CreateUser, _: &mut Self::Context) -> Self::Result {
-        use self::schema::users::dsl::*;
+        use self::database_schema::users::dsl::*;
 
         let uuid = format!("{}", uuid::Uuid::new_v4());
         let new_user = models::NewUser {

@@ -1,4 +1,4 @@
-use super::schema::users;
+use super::database_schema::users;
 
 #[derive(Serialize, Queryable)]
 pub struct User {
