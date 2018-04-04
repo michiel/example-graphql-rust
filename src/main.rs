@@ -1,9 +1,5 @@
 //! Actix web diesel example
 //!
-//! Diesel does not support tokio, so we have to run it in separate threads.
-//! Actix supports sync actors by default, so we going to create sync actor that use diesel.
-//! Technically sync actors are worker style actors, multiple of them
-//! can run in parallel and process messages from same queue.
 extern crate serde;
 extern crate serde_json;
 #[macro_use]
@@ -18,6 +14,7 @@ extern crate actix_web;
 extern crate env_logger;
 #[macro_use]
 extern crate juniper;
+extern crate dotenv;
 
 use actix::prelude::*;
 use actix_web::{http, server, middleware, App, Path, State, HttpRequest, HttpResponse,
@@ -27,76 +24,30 @@ use diesel::prelude::*;
 use diesel::r2d2::{Pool, ConnectionManager};
 use futures::future::Future;
 
-use juniper::http::graphiql::graphiql_source;
-use juniper::http::GraphQLRequest;
-
-mod db;
 mod models;
+mod database_driver;
 mod database_schema;
+mod graphql_driver;
 mod graphql_schema;
 
-use db::{CreateUser, DbExecutor};
+use database_driver::{CreateUser, DbExecutor};
+use graphql_driver::{GraphQLExecutor};
+use graphql_schema::{create_schema};
 
-use graphql_schema::{Schema, create_schema};
+pub type DBPool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
 
-#[derive(Serialize, Deserialize)]
-pub struct GraphQLData(GraphQLRequest);
-
-impl Message for GraphQLData {
-    type Result = Result<String, Error>;
+fn get_db_connection_pool() -> DBPool {
+    dotenv::dotenv().ok();
+    let database_url = std::env::var("DATABASE_URL").expect("Did not find DATABASE_URL in config");
+    let manager = ConnectionManager::<SqliteConnection>::new(database_url);
+    let pool = r2d2::Pool::builder()
+        .build(manager)
+        .expect("failed to create r2d2 pool");
+    pool
 }
 
-pub struct GraphQLExecutor {
-    schema: std::sync::Arc<Schema>,
-}
 
-impl GraphQLExecutor {
-    fn new(schema: std::sync::Arc<Schema>) -> GraphQLExecutor {
-        GraphQLExecutor { schema: schema }
-    }
-}
-
-impl Actor for GraphQLExecutor {
-    type Context = SyncContext<Self>;
-}
-
-impl Handler<GraphQLData> for GraphQLExecutor {
-    type Result = Result<String, Error>;
-
-    fn handle(&mut self, msg: GraphQLData, _: &mut Self::Context) -> Self::Result {
-        let res = msg.0.execute(&self.schema, &());
-        let res_text = serde_json::to_string(&res)?;
-        Ok(res_text)
-    }
-}
-
-fn graphiql(_req: HttpRequest<AppState>) -> Result<HttpResponse, Error> {
-    let html = graphiql_source("/graphql");
-    Ok(
-        HttpResponse::Ok()
-            .content_type("text/html; charset=utf-8")
-            .body(html),
-    )
-}
-
-fn graphql(req: HttpRequest<AppState>) -> Box<Future<Item = HttpResponse, Error = Error>> {
-    let executor = req.state().executor.clone();
-    req.json()
-        .from_err()
-        .and_then(move |val: GraphQLData| {
-            executor.send(val).from_err().and_then(|res| match res {
-                Ok(user) => Ok(
-                    HttpResponse::Ok()
-                        .header(http::header::CONTENT_TYPE, "application/json")
-                        .body(user),
-                ),
-                Err(_) => Ok(HttpResponse::InternalServerError().into()),
-            })
-        })
-        .responder()
-}
-/// State with DbExecutor address
-struct AppState {
+pub struct AppState {
     db: Addr<Syn, DbExecutor>,
     executor: Addr<Syn, GraphQLExecutor>,
 }
@@ -120,11 +71,7 @@ fn main() {
     env_logger::init();
     let sys = actix::System::new("diesel-example");
 
-    // Start 3 db executor actors
-    let manager = ConnectionManager::<SqliteConnection>::new("test.db");
-    let pool = r2d2::Pool::builder().build(manager).expect(
-        "Failed to create pool.",
-    );
+    let pool = get_db_connection_pool();
 
     let db_addr = SyncArbiter::start(3, move || DbExecutor(pool.clone()));
 
@@ -139,8 +86,8 @@ fn main() {
         })
         // enable logger
         .middleware(middleware::Logger::default())
-            .resource("/graphql", |r| r.method(http::Method::POST).h(graphql))
-            .resource("/graphiql", |r| r.method(http::Method::GET).h(graphiql))
+            .resource("/graphql", |r| r.method(http::Method::POST).h(graphql_driver::graphql))
+            .resource("/graphiql", |r| r.method(http::Method::GET).h(graphql_driver::graphiql))
             .resource("/{name}", |r| r.method(http::Method::GET).with2(index))
     }).bind("0.0.0.0:3000")
         .unwrap()
