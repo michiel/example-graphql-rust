@@ -46,7 +46,6 @@ fn get_db_connection_pool() -> DBPool {
     pool
 }
 
-
 pub struct AppState {
     db: Addr<Syn, DbExecutor>,
     executor: Addr<Syn, GraphQLExecutor>,
@@ -69,30 +68,29 @@ fn index(name: Path<String>, state: State<AppState>) -> FutureResponse<HttpRespo
 fn main() {
     ::std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
-    let sys = actix::System::new("diesel-example");
+    let sys = actix::System::new("xds");
 
     let pool = get_db_connection_pool();
 
-    let db_addr = SyncArbiter::start(3, move || DbExecutor(pool.clone()));
+    let db_addr = SyncArbiter::start(3, move || DbExecutor(get_db_connection_pool()));
 
-    let schema = std::sync::Arc::new(create_schema());
-    let gq_addr = SyncArbiter::start(3, move || GraphQLExecutor::new(schema.clone()));
 
+    let server_port = std::env::var("SERVER_PORT").expect("SERVER_PORT must be set");
     // Start http server
     server::new(move || {
         App::with_state(AppState{
             db: db_addr.clone(),
-            executor: gq_addr.clone(),
+            executor: graphql_driver::create_executor(std::sync::Arc::new(pool.clone()))
         })
         // enable logger
         .middleware(middleware::Logger::default())
             .resource("/graphql", |r| r.method(http::Method::POST).h(graphql_driver::graphql))
             .resource("/graphiql", |r| r.method(http::Method::GET).h(graphql_driver::graphiql))
-            .resource("/{name}", |r| r.method(http::Method::GET).with2(index))
-    }).bind("0.0.0.0:3000")
+            .resource("/get/{name}", |r| r.method(http::Method::GET).with2(index))
+    }).bind(&server_port)
         .unwrap()
         .start();
 
-    println!("Started http server: 0.0.0.0:3000");
+    println!("Started http server: {}", server_port);
     let _ = sys.run();
 }
