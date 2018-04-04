@@ -1,11 +1,13 @@
 use juniper::FieldResult;
 use juniper::RootNode;
 
-use super::models::{User, GQLNewUser};
+use super::models::{User, NewUser, GQLNewUser};
+use super::database_driver::CreateUser;
+use ::graphql_driver::GraphQLExecutor;
 
 pub struct QueryRoot;
 
-graphql_object!(QueryRoot: () |&self| {
+graphql_object!(QueryRoot: GraphQLExecutor |&self| {
     field user(&executor, id: String) -> FieldResult<User> {
         Ok(User{
             id: "1234".to_owned(),
@@ -16,11 +18,14 @@ graphql_object!(QueryRoot: () |&self| {
 
 pub struct MutationRoot;
 
-graphql_object!(MutationRoot: () |&self| {
+graphql_object!(MutationRoot: GraphQLExecutor |&self| {
     field createUser(&executor, new_user: GQLNewUser) -> FieldResult<User> {
+        let fut = executor.context().db_addr.send(CreateUser{
+            name: new_user.name
+        });
         Ok(User{
             id: "1234".to_owned(),
-            name: new_user.name,
+            name: "Luke".to_owned(),
         })
     }
 });

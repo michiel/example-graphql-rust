@@ -20,8 +20,6 @@ use actix::prelude::*;
 use actix_web::{http, server, middleware, App, Path, State, HttpRequest, HttpResponse,
                 HttpMessage, AsyncResponder, FutureResponse, Error};
 
-use diesel::prelude::*;
-use diesel::r2d2::{Pool, ConnectionManager};
 use futures::future::Future;
 
 mod models;
@@ -30,21 +28,9 @@ mod database_schema;
 mod graphql_driver;
 mod graphql_schema;
 
-use database_driver::{CreateUser, DbExecutor};
+use database_driver::{CreateUser, DbExecutor, DBPool, get_db_connection_pool};
 use graphql_driver::{GraphQLExecutor};
 use graphql_schema::{create_schema};
-
-pub type DBPool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
-
-fn get_db_connection_pool() -> DBPool {
-    dotenv::dotenv().ok();
-    let database_url = std::env::var("DATABASE_URL").expect("Did not find DATABASE_URL in config");
-    let manager = ConnectionManager::<SqliteConnection>::new(database_url);
-    let pool = r2d2::Pool::builder()
-        .build(manager)
-        .expect("failed to create r2d2 pool");
-    pool
-}
 
 pub struct AppState {
     db: Addr<Syn, DbExecutor>,
@@ -70,16 +56,13 @@ fn main() {
     env_logger::init();
     let sys = actix::System::new("xds");
 
-    let pool = get_db_connection_pool();
-
-    let db_addr = SyncArbiter::start(3, move || DbExecutor(get_db_connection_pool()));
-
     let server_port = std::env::var("SERVER_PORT").expect("SERVER_PORT must be set");
     // Start http server
     server::new(move || {
-        App::with_state(AppState{
-            db: db_addr.clone(),
-            executor: graphql_driver::create_executor(std::sync::Arc::new(pool.clone()))
+        App::with_state(
+            AppState{
+                db: database_driver::get_db_address(),
+                executor: graphql_driver::create_executor(database_driver::get_db_address())
         })
         // enable logger
         .middleware(middleware::Logger::default())

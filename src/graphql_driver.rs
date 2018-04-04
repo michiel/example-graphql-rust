@@ -10,7 +10,8 @@ use super::{AppState, DBPool};
 
 use actix_web::{http, server, middleware, App, Path, State, HttpRequest, HttpResponse,
                 HttpMessage, AsyncResponder, FutureResponse, Error};
-
+use actix;
+use ::database_driver::DbExecutor;
 use graphql_schema::{Schema, create_schema};
 
 #[derive(Serialize, Deserialize)]
@@ -21,17 +22,8 @@ impl Message for GraphQLData {
 }
 
 pub struct GraphQLExecutor {
-    schema: std::sync::Arc<Schema>,
-    pool: std::sync::Arc<DBPool>,
-}
-
-impl GraphQLExecutor {
-    pub fn new( schema: std::sync::Arc<Schema>, pool: std::sync::Arc<DBPool>) -> GraphQLExecutor {
-        GraphQLExecutor {
-            schema: schema,
-            pool: pool
-        }
-    }
+    pub schema: std::sync::Arc<Schema>,
+    pub db_addr: actix::Addr<Syn, DbExecutor>
 }
 
 impl Actor for GraphQLExecutor {
@@ -42,7 +34,7 @@ impl Handler<GraphQLData> for GraphQLExecutor {
     type Result = Result<String, Error>;
 
     fn handle(&mut self, msg: GraphQLData, _: &mut Self::Context) -> Self::Result {
-        let res = msg.0.execute(&self.schema, &());
+        let res = msg.0.execute(&self.schema, &self);
         let res_text = serde_json::to_string(&res)?;
         Ok(res_text)
     }
@@ -74,10 +66,10 @@ pub fn graphql(req: HttpRequest<AppState>) -> Box<Future<Item = HttpResponse, Er
         .responder()
 }
 
-pub fn create_executor(pool: std::sync::Arc<DBPool>) -> Addr<Syn, GraphQLExecutor> {
+pub fn create_executor(db_addr: Addr<Syn, DbExecutor>) -> Addr<Syn, GraphQLExecutor> {
     SyncArbiter::start(3, move || GraphQLExecutor {
         schema: std::sync::Arc::new(create_schema()),
-        pool: pool.clone()
+        db_addr: db_addr.clone()
     })
 }
 
