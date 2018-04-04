@@ -74,7 +74,6 @@ fn main() {
 
     let db_addr = SyncArbiter::start(3, move || DbExecutor(get_db_connection_pool()));
 
-
     let server_port = std::env::var("SERVER_PORT").expect("SERVER_PORT must be set");
     // Start http server
     server::new(move || {
