@@ -25,6 +25,7 @@ use futures::future::Future;
 mod models;
 mod database_driver;
 mod database_schema;
+mod database_queries;
 mod graphql_driver;
 mod graphql_schema;
 

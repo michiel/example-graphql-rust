@@ -10,14 +10,13 @@ pub struct User {
 
 #[derive(Insertable)]
 #[table_name = "users"]
-pub struct NewUser<'a> {
+pub struct DbNewUser<'a> {
     pub id: &'a str,
     pub name: &'a str,
 }
 
 #[derive(GraphQLInputObject)]
 #[graphql(description = "A humanoid creature")]
-pub struct GQLNewUser {
-    pub id: String,
+pub struct NewUser {
     pub name: String,
 }
