@@ -54,6 +54,7 @@ fn index(name: Path<String>, state: State<AppState>) -> FutureResponse<HttpRespo
 fn main() {
     ::std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
+    dotenv::dotenv().ok();
     let sys = actix::System::new("xds");
 
     let server_port = std::env::var("SERVER_PORT").expect("SERVER_PORT must be set");
@@ -62,7 +63,7 @@ fn main() {
         App::with_state(
             AppState{
                 db: database_driver::get_db_address(),
-                executor: graphql_driver::create_executor(database_driver::get_db_address())
+                executor: graphql_driver::create_executor(get_db_connection_pool())
         })
         // enable logger
         .middleware(middleware::Logger::default())

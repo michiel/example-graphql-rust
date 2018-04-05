@@ -11,7 +11,6 @@ use super::{AppState, DBPool};
 use actix_web::{http, server, middleware, App, Path, State, HttpRequest, HttpResponse,
                 HttpMessage, AsyncResponder, FutureResponse, Error};
 use actix;
-use ::database_driver::DbExecutor;
 use graphql_schema::{Schema, create_schema};
 
 #[derive(Serialize, Deserialize)]
@@ -23,7 +22,7 @@ impl Message for GraphQLData {
 
 pub struct GraphQLExecutor {
     pub schema: std::sync::Arc<Schema>,
-    pub db_addr: actix::Addr<Syn, DbExecutor>
+    pub db_pool: DBPool
 }
 
 impl Actor for GraphQLExecutor {
@@ -66,10 +65,10 @@ pub fn graphql(req: HttpRequest<AppState>) -> Box<Future<Item = HttpResponse, Er
         .responder()
 }
 
-pub fn create_executor(db_addr: Addr<Syn, DbExecutor>) -> Addr<Syn, GraphQLExecutor> {
+pub fn create_executor(pool: DBPool) -> Addr<Syn, GraphQLExecutor> {
     SyncArbiter::start(3, move || GraphQLExecutor {
         schema: std::sync::Arc::new(create_schema()),
-        db_addr: db_addr.clone()
+        db_pool: pool.clone()
     })
 }
 
