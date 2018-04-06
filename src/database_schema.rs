@@ -1,7 +1,7 @@
 table! {
     users (id) {
         id -> Int4,
-        uuid -> String,
+        uuid -> Text,
         name -> Text,
         active -> Bool,
     }

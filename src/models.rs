@@ -10,7 +10,7 @@ pub struct User {
     pub active: bool,
 }
 
-#[derive(Insertable)]
+#[derive(Deserialize, Insertable)]
 #[table_name = "users"]
 pub struct DbNewUser<'a> {
     pub uuid: &'a str,

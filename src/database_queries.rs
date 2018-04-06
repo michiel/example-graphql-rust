@@ -1,4 +1,4 @@
-use uuid;
+use uuid::Uuid;
 use diesel;
 use diesel::Connection;
 use models;
@@ -6,37 +6,35 @@ use diesel::prelude::*;
 use super::models::{User, NewUser, DbNewUser};
 
 fn generate_uuid() -> String {
-    let uuid = format!("{}", uuid::Uuid::new_v4());
+    let uuid : String = format!("{}", Uuid::new_v4());
     uuid
 }
 
 pub fn db_create_user(conn: &SqliteConnection, new_user: &NewUser) -> Result<User, String> {
+    use ::database_schema::users::dsl;
+
     let uuid = generate_uuid();
+
     let user = DbNewUser {
         uuid: &uuid,
         name: &new_user.name,
         active: true,
     };
 
-    use ::database_schema::users::dsl::*;
-    diesel::insert_into(users)
+    diesel::insert_into(dsl::users)
         .values(&user)
         .execute(&*conn)
         .expect("Error inserting user");
 
-    let mut items = users
-        .filter(uuid.eq(&uuid))
-        .load::<models::User>(&*conn)
-        .expect("Error loading user");
+    db_find_user_by_uuid(&conn, &uuid)
 
-    Ok(items.pop().unwrap())
 }
 
 pub fn db_find_user_by_uuid(conn: &SqliteConnection, uuid: &str) -> Result<User, String> {
-    use ::database_schema::users::dsl::*;
+    use ::database_schema::users::dsl;
 
-    let mut items = users
-        .filter(id.eq(&uuid))
+    let mut items = dsl::users
+        .filter(dsl::uuid.eq(&uuid))
         .load::<models::User>(&*conn)
         .expect("Error loading user");
 
