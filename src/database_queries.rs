@@ -13,8 +13,9 @@ fn generate_uuid() -> String {
 pub fn db_create_user(conn: &SqliteConnection, new_user: &NewUser) -> Result<User, String> {
     let uuid = generate_uuid();
     let user = DbNewUser {
-        id: &uuid,
+        uuid: &uuid,
         name: &new_user.name,
+        active: true,
     };
 
     use ::database_schema::users::dsl::*;
@@ -24,14 +25,14 @@ pub fn db_create_user(conn: &SqliteConnection, new_user: &NewUser) -> Result<Use
         .expect("Error inserting user");
 
     let mut items = users
-        .filter(id.eq(&uuid))
+        .filter(uuid.eq(&uuid))
         .load::<models::User>(&*conn)
         .expect("Error loading user");
 
     Ok(items.pop().unwrap())
 }
 
-pub fn db_find_user_by_id(conn: &SqliteConnection, uuid: &str) -> Result<User, String> {
+pub fn db_find_user_by_uuid(conn: &SqliteConnection, uuid: &str) -> Result<User, String> {
     use ::database_schema::users::dsl::*;
 
     let mut items = users
@@ -45,7 +46,7 @@ pub fn db_find_user_by_id(conn: &SqliteConnection, uuid: &str) -> Result<User, S
 pub fn db_find_users(conn: &SqliteConnection) -> Result<Vec<User>, String> {
     use ::database_schema::users::dsl::*;
 
-    let mut items = users
+    let items = users
         .load::<models::User>(&*conn)
         .expect("Error loading users");
 

@@ -51,7 +51,10 @@ impl Handler<CreateUser> for DbExecutor {
     fn handle(&mut self, msg: CreateUser, _: &mut Self::Context) -> Self::Result {
         use ::database_queries::db_create_user;
         let conn: &SqliteConnection = &self.0.get().unwrap();
-        let user = ::models::NewUser { name: msg.name };
+        let user = ::models::NewUser {
+            name: msg.name,
+            active: true,
+        };
         Ok(db_create_user(&conn, &user).unwrap())
     }
 }
