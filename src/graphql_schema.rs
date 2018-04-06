@@ -3,7 +3,7 @@ use juniper::RootNode;
 
 use super::models::{User, NewUser};
 use ::graphql_driver::GraphQLExecutor;
-use ::database_queries::{db_create_user, db_find_user_by_id};
+use ::database_queries::{db_create_user, db_find_user_by_id, db_find_users};
 
 pub struct QueryRoot;
 
@@ -11,6 +11,11 @@ graphql_object!(QueryRoot: GraphQLExecutor |&self| {
     field user(&executor, id: String) -> FieldResult<User> {
         let conn = executor.context().db_pool.get().unwrap();
         Ok(db_find_user_by_id(&conn, &id).unwrap())
+    }
+
+    field users(&executor) -> FieldResult<Vec<User>> {
+        let conn = executor.context().db_pool.get().unwrap();
+        Ok(db_find_users(&conn).unwrap())
     }
 });
 
