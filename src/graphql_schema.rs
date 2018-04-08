@@ -13,9 +13,12 @@ graphql_object!(QueryRoot: GraphQLExecutor |&self| {
         Ok(db_find_user_by_uuid(&conn, &uuid).unwrap())
     }
 
-    field users(&executor) -> FieldResult<Vec<User>> {
+    field users(&executor,
+                limit: Option<i32> as "Optional limit, default 20"
+                ) -> FieldResult<Vec<User>> {
         let conn = executor.context().db_pool.get().unwrap();
-        Ok(db_find_users(&conn).unwrap())
+        let limit = limit.unwrap_or(20) as i64;
+        Ok(db_find_users( &conn, limit).unwrap())
     }
 });
 

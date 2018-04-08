@@ -41,10 +41,11 @@ pub fn db_find_user_by_uuid(conn: &SqliteConnection, uuid: &str) -> Result<User,
     Ok(items.pop().unwrap())
 }
 
-pub fn db_find_users(conn: &SqliteConnection) -> Result<Vec<User>, String> {
+pub fn db_find_users(conn: &SqliteConnection, limit:i64) -> Result<Vec<User>, String> {
     use ::database_schema::users::dsl::*;
 
     let items = users
+        .limit(limit)
         .load::<models::User>(&*conn)
         .expect("Error loading users");
 
