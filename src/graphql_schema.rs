@@ -8,17 +8,22 @@ use ::database_queries::{db_create_user, db_find_user_by_uuid, db_find_users};
 #[derive(GraphQLObject)]
 #[graphql(description = "Page info")]
 pub struct PageInfo {
-    pub startCursor: String,
-    pub endCursor: String,
-    pub hasNextPage: bool,
+    #[graphql(name="startCursor")]
+    pub start_cursor: String,
+    #[graphql(name="endCursor")]
+    pub end_cursor: String,
+    #[graphql(name="hasNextPage")]
+    pub has_next_page: bool,
 }
 
 #[derive(GraphQLObject)]
 #[graphql(description = "Connection")]
 pub struct UserConnection {
-    pub totalCount: Option<i32>,
+    #[graphql(name="totalCount")]
+    pub total_count: Option<i32>,
     pub edges: Vec<User>,
-    pub pageInfo: PageInfo,
+    #[graphql(name="pageInfo")]
+    pub page_info: PageInfo,
     pub cursor: String,
 }
 
@@ -42,12 +47,12 @@ graphql_object!(QueryRoot: GraphQLExecutor |&self| {
         let conn = executor.context().db_pool.get().unwrap();
         Ok(
             UserConnection {
-                totalCount: Some(5),
+                total_count: Some(5),
                 edges: db_find_users(&conn, 5).unwrap(),
-                pageInfo: PageInfo {
-                    startCursor: "123".to_owned(),
-                    endCursor: "123".to_owned(),
-                    hasNextPage: true,
+                page_info: PageInfo {
+                    start_cursor: "123".to_owned(),
+                    end_cursor: "123".to_owned(),
+                    has_next_page: true,
                 },
                 cursor: "123".to_owned(),
             }
