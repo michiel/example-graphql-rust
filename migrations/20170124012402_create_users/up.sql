@@ -5,4 +5,9 @@ CREATE TABLE users (
   active BOOLEAN NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-)
+);
+
+CREATE TRIGGER users_update_trigger AFTER UPDATE ON users
+BEGIN
+  UPDATE users SET updated_on = datetime('now') WHERE id = NEW.id;
+END;

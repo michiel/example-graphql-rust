@@ -36,10 +36,10 @@ impl PagingParams {
         }
     }
 
-    pub fn get_cursor(&self) -> i32 {
+    pub fn get_cursor(&self) -> i64 {
         match self.cursor {
             None => 0,
-            Some(ref cursor) => cursor.parse::<i32>().unwrap_or(0)
+            Some(ref cursor) => cursor.parse::<i64>().unwrap_or(0)
         }
     }
 }

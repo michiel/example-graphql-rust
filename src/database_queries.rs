@@ -44,7 +44,7 @@ pub fn db_find_users(conn: &SqliteConnection, paging: &PagingParams) -> Result<D
     use ::database_schema::users::dsl::*;
 
     let limit = paging.get_limit() as i64;
-    let current_cursor = paging.get_cursor() as i64;
+    let current_cursor = NaiveDateTime::from_timestamp(paging.get_cursor(), 0);
 
     let base = users.order(created_at);
     let count = base
@@ -52,13 +52,13 @@ pub fn db_find_users(conn: &SqliteConnection, paging: &PagingParams) -> Result<D
         .get_result(&*conn);
 
     let items = base
-        // .select(created_at.gt(NaiveDateTime::from_timestamp(current_cursor, 0)))
+        .filter(created_at.gt(current_cursor))
         .limit(limit)
         .load::<User>(&*conn)
         .expect("Error loading users");
 
     let next_cursor = match items.last() {
-        Some(item) => Some(format!("{}", item.created_at)),
+        Some(item) => Some(format!("{}", item.created_at.timestamp())),
         None => None
     };
 
