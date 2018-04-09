@@ -7,6 +7,7 @@ extern crate serde_derive;
 #[macro_use]
 extern crate diesel;
 extern crate r2d2;
+extern crate chrono;
 extern crate uuid;
 extern crate futures;
 extern crate actix;

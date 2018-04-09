@@ -1,4 +1,5 @@
 use super::database_schema::users;
+use chrono;
 
 pub struct DBQueryResult<T> {
     pub items: Vec<T>,
@@ -50,6 +51,8 @@ pub struct User {
     pub uuid: String,
     pub name: String,
     pub active: bool,
+    pub created_at: chrono::NaiveDateTime,
+    pub updated_at: chrono::NaiveDateTime,
 }
 
 #[derive(Deserialize, Insertable)]

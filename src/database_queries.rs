@@ -2,6 +2,7 @@ use uuid::Uuid;
 use diesel;
 use diesel::Connection;
 use diesel::prelude::*;
+use diesel::expression::dsl::now;
 use super::models::*;
 
 fn generate_uuid() -> String {
