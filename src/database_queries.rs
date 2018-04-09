@@ -29,6 +29,16 @@ pub fn db_create_user(conn: &SqliteConnection, new_user: &NewUser) -> Result<Use
 
 }
 
+pub fn db_update_user(conn: &SqliteConnection, uuid: &str, user: &NewUser) -> Result<User, String> {
+    use ::database_schema::users::dsl;
+    let res = dsl::users.filter(dsl::uuid.eq(&uuid));
+    diesel::update(res)
+        .set(user)
+        .execute(&*conn);
+    db_find_user_by_uuid(&conn, &uuid)
+
+}
+
 pub fn db_find_user_by_uuid(conn: &SqliteConnection, uuid: &str) -> Result<User, String> {
     use ::database_schema::users::dsl;
 

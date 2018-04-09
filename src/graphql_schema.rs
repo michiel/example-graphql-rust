@@ -58,6 +58,10 @@ graphql_object!(MutationRoot: GraphQLExecutor |&self| {
         let conn = executor.context().db_pool.get()?;
         Ok(db_create_user(&conn, &user)?)
     }
+    field updateUser(&executor, uuid: String, user: NewUser) -> FieldResult<User> {
+        let conn = executor.context().db_pool.get()?;
+        Ok(db_update_user(&conn, &uuid, &user)?)
+    }
 });
 
 pub type Schema = RootNode<'static, QueryRoot, MutationRoot>;

@@ -90,6 +90,8 @@ pub struct DbNewUser<'a> {
     pub active: bool,
 }
 
+#[derive(AsChangeset)]
+#[table_name = "users"]
 #[derive(GraphQLInputObject)]
 #[graphql(description = "A humanoid creature")]
 pub struct NewUser {
