@@ -53,6 +53,23 @@ impl Default for PagingParams {
     }
 }
 
+#[derive(GraphQLInputObject)]
+pub struct UsersFilterParams {
+    pub uuid: Option<String>,
+    pub name: Option<String>,
+    pub active: Option<bool>,
+}
+
+impl Default for UsersFilterParams {
+    fn default() -> Self {
+        UsersFilterParams {
+            uuid: None,
+            name: None,
+            active: None,
+        }
+    }
+}
+
 #[derive(GraphQLObject)]
 #[graphql(description = "A humanoid creature")]
 #[derive(Serialize, Queryable)]

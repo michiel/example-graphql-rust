@@ -17,23 +17,6 @@ pub struct UserConnection {
     pub cursor: Option<String>,
 }
 
-#[derive(GraphQLInputObject)]
-pub struct UsersFilterParams {
-    pub uuid: Option<String>,
-    pub name: Option<String>,
-    pub active: Option<bool>,
-}
-
-impl Default for UsersFilterParams {
-    fn default() -> Self {
-        UsersFilterParams {
-            uuid: None,
-            name: None,
-            active: None,
-        }
-    }
-}
-
 pub struct QueryRoot;
 
 graphql_object!(QueryRoot: GraphQLExecutor |&self| {
@@ -51,7 +34,7 @@ graphql_object!(QueryRoot: GraphQLExecutor |&self| {
         let filter = filter.unwrap_or(UsersFilterParams::default());
         let paging = paging.unwrap_or(PagingParams::default());
 
-        let res = db_find_users(&conn, &paging)?;
+        let res = db_find_users(&conn, &filter, &paging)?;
 
         Ok(
             UserConnection {

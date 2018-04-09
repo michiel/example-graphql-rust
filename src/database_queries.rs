@@ -40,7 +40,7 @@ pub fn db_find_user_by_uuid(conn: &SqliteConnection, uuid: &str) -> Result<User,
     Ok(items.pop().unwrap())
 }
 
-pub fn db_find_users(conn: &SqliteConnection, paging: &PagingParams) -> Result<DBQueryResult<User>, String> {
+pub fn db_find_users(conn: &SqliteConnection, filter: &UsersFilterParams, paging: &PagingParams) -> Result<DBQueryResult<User>, String> {
     use ::database_schema::users::dsl::*;
 
     let limit = paging.get_limit() as i64;
