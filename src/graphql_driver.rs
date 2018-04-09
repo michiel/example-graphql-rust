@@ -8,9 +8,8 @@ use juniper::http::GraphQLRequest;
 use std;
 use super::{AppState, DBPool};
 
-use actix_web::{http, server, middleware, App, Path, State, HttpRequest, HttpResponse,
-                HttpMessage, AsyncResponder, FutureResponse, Error};
-use actix;
+use actix_web::{http, HttpRequest, HttpResponse,
+                HttpMessage, AsyncResponder, Error};
 use graphql_schema::{Schema, create_schema};
 
 #[derive(Serialize, Deserialize)]

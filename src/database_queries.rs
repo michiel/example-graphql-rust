@@ -1,8 +1,6 @@
 use uuid::Uuid;
 use diesel;
-use diesel::Connection;
 use diesel::prelude::*;
-use diesel::expression::dsl::now;
 use super::models::*;
 
 fn generate_uuid() -> String {
@@ -44,7 +42,7 @@ pub fn db_find_user_by_uuid(conn: &SqliteConnection, uuid: &str) -> Result<User,
 pub fn db_find_users(conn: &SqliteConnection, paging: &PagingParams) -> Result<DBQueryResult<User>, String> {
     use ::database_schema::users::dsl::*;
 
-    let base = users;
+    let base = users.order(created_at);
     let count = base
         .count()
         .get_result(&*conn);

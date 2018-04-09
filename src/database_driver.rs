@@ -1,6 +1,3 @@
-//! Db executor actor
-use uuid;
-use diesel;
 use actix_web::*;
 use actix::prelude::*;
 use diesel::prelude::*;
@@ -10,7 +7,6 @@ use std;
 use dotenv;
 
 use models;
-use database_schema;
 
 pub fn get_db_connection_pool() -> DBPool {
     dotenv::dotenv().ok();

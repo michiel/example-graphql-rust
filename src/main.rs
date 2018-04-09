@@ -18,8 +18,8 @@ extern crate juniper;
 extern crate dotenv;
 
 use actix::prelude::*;
-use actix_web::{http, server, middleware, App, Path, State, HttpRequest, HttpResponse,
-                HttpMessage, AsyncResponder, FutureResponse, Error};
+use actix_web::{http, server, middleware, App, Path, State, HttpResponse,
+                AsyncResponder, FutureResponse};
 
 use futures::future::Future;
 
@@ -32,7 +32,6 @@ mod graphql_schema;
 
 use database_driver::{CreateUser, DbExecutor, DBPool, get_db_connection_pool};
 use graphql_driver::{GraphQLExecutor};
-use graphql_schema::{create_schema};
 
 pub struct AppState {
     db: Addr<Syn, DbExecutor>,
