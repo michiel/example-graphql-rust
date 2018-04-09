@@ -14,7 +14,7 @@ pub struct UserConnection {
     pub edges: Vec<User>,
     #[graphql(name="pageInfo")]
     pub page_info: PageInfo,
-    pub cursor: String,
+    pub cursor: Option<String>,
 }
 
 #[derive(GraphQLInputObject)]
@@ -58,11 +58,11 @@ graphql_object!(QueryRoot: GraphQLExecutor |&self| {
                 total_count: res.count,
                 edges: res.items,
                 page_info: PageInfo {
-                    start_cursor: "123".to_owned(),
-                    end_cursor: "123".to_owned(),
-                    has_next_page: true,
+                    start_cursor: None,
+                    end_cursor: None,
+                    has_next_page: res.has_more,
                 },
-                cursor: "123".to_owned(),
+                cursor: res.cursor,
             }
         )
     }

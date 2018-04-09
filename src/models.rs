@@ -4,15 +4,18 @@ use chrono;
 pub struct DBQueryResult<T> {
     pub items: Vec<T>,
     pub count: i32,
+    pub cursor: Option<String>,
+    pub has_more: bool,
+
 }
 
 #[derive(GraphQLObject)]
 #[graphql(description = "Page info")]
 pub struct PageInfo {
     #[graphql(name="startCursor")]
-    pub start_cursor: String,
+    pub start_cursor: Option<String>,
     #[graphql(name="endCursor")]
-    pub end_cursor: String,
+    pub end_cursor: Option<String>,
     #[graphql(name="hasNextPage")]
     pub has_next_page: bool,
 }
@@ -30,6 +33,13 @@ impl PagingParams {
         match self.limit {
             None => DEFAULT_PAGE_SIZE,
             Some(limit) => limit
+        }
+    }
+
+    pub fn get_cursor(&self) -> i32 {
+        match self.cursor {
+            None => 0,
+            Some(ref cursor) => cursor.parse::<i32>().unwrap_or(0)
         }
     }
 }

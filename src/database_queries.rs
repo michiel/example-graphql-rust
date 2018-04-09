@@ -2,6 +2,7 @@ use uuid::Uuid;
 use diesel;
 use diesel::prelude::*;
 use super::models::*;
+use chrono::NaiveDateTime;
 
 fn generate_uuid() -> String {
     let uuid : String = format!("{}", Uuid::new_v4());
@@ -42,22 +43,32 @@ pub fn db_find_user_by_uuid(conn: &SqliteConnection, uuid: &str) -> Result<User,
 pub fn db_find_users(conn: &SqliteConnection, paging: &PagingParams) -> Result<DBQueryResult<User>, String> {
     use ::database_schema::users::dsl::*;
 
+    let limit = paging.get_limit() as i64;
+    let current_cursor = paging.get_cursor() as i64;
+
     let base = users.order(created_at);
     let count = base
         .count()
         .get_result(&*conn);
 
     let items = base
-        .limit(paging.get_limit() as i64)
+        // .select(created_at.gt(NaiveDateTime::from_timestamp(current_cursor, 0)))
+        .limit(limit)
         .load::<User>(&*conn)
         .expect("Error loading users");
+
+    let next_cursor = match items.last() {
+        Some(item) => Some(format!("{}", item.created_at)),
+        None => None
+    };
+
+    let has_more = (items.len() as i64) == limit;
 
     Ok(DBQueryResult {
         items: items,
         count: count.unwrap_or(0) as i32,
-    })
+        cursor: next_cursor,
+        has_more: has_more,
+        })
 }
-
-
-
 
