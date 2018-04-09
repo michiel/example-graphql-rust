@@ -1,9 +1,8 @@
 use uuid::Uuid;
 use diesel;
 use diesel::Connection;
-use models;
 use diesel::prelude::*;
-use super::models::{User, NewUser, DbNewUser};
+use super::models::*;
 
 fn generate_uuid() -> String {
     let uuid : String = format!("{}", Uuid::new_v4());
@@ -35,21 +34,29 @@ pub fn db_find_user_by_uuid(conn: &SqliteConnection, uuid: &str) -> Result<User,
 
     let mut items = dsl::users
         .filter(dsl::uuid.eq(&uuid))
-        .load::<models::User>(&*conn)
+        .load::<User>(&*conn)
         .expect("Error loading user");
 
     Ok(items.pop().unwrap())
 }
 
-pub fn db_find_users(conn: &SqliteConnection, limit:i64) -> Result<Vec<User>, String> {
+pub fn db_find_users(conn: &SqliteConnection, paging: &PagingParams) -> Result<DBQueryResult<User>, String> {
     use ::database_schema::users::dsl::*;
 
-    let items = users
-        .limit(limit)
-        .load::<models::User>(&*conn)
+    let base = users;
+    let count = base
+        .count()
+        .get_result(&*conn);
+
+    let items = base
+        .limit(paging.get_limit() as i64)
+        .load::<User>(&*conn)
         .expect("Error loading users");
 
-    Ok(items)
+    Ok(DBQueryResult {
+        items: items,
+        count: count.unwrap_or(0) as i32,
+    })
 }
 
 
