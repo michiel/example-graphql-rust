@@ -55,7 +55,7 @@ fn index(name: Path<String>, state: State<AppState>) -> FutureResponse<HttpRespo
 }
 
 fn main() {
-    ::std::env::set_var("RUST_LOG", "actix_web=info");
+    // ::std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
     dotenv::dotenv().ok();
     let sys = actix::System::new("xds");
@@ -74,7 +74,9 @@ fn main() {
             .resource("/graphiql", |r| r.method(http::Method::GET).h(graphql_driver::graphiql))
             .resource("/get/{name}", |r| r.method(http::Method::GET).with2(index))
     }).bind(&server_port)
-        .unwrap()
+        .expect("Unable to bind to port")
+        .threads(3)
+        .shutdown_timeout(2)
         .start();
 
     println!("Started http server: {}", server_port);

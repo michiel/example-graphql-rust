@@ -31,8 +31,10 @@ pub fn db_create_user(conn: &SqliteConnection, new_user: &NewUser) -> Result<Use
 pub fn db_update_user(conn: &SqliteConnection, uuid: &str, user: &NewUser) -> Result<User, String> {
     use database_schema::users::dsl;
     let res = dsl::users.filter(dsl::uuid.eq(&uuid));
-    diesel::update(res).set(user).execute(&*conn);
-    db_find_user_by_uuid(&conn, &uuid)
+    match diesel::update(res).set(user).execute(&*conn) {
+        Ok(_) => db_find_user_by_uuid(&conn, &uuid),
+        Err(err) => Err(format!("Unable to update user {}", err)),
+    }
 }
 
 pub fn db_find_user_by_uuid(conn: &SqliteConnection, uuid: &str) -> Result<User, String> {
@@ -43,7 +45,10 @@ pub fn db_find_user_by_uuid(conn: &SqliteConnection, uuid: &str) -> Result<User,
         .load::<User>(&*conn)
         .expect("Error loading user");
 
-    Ok(items.pop().unwrap())
+    match items.pop() {
+        Some(item) => Ok(item),
+        None => Err(format!("No user found")),
+    }
 }
 
 pub fn db_find_users(
