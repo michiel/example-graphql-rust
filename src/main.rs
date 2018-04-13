@@ -1,25 +1,25 @@
 //! Actix web diesel example
 //!
-extern crate serde;
-extern crate serde_json;
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate diesel;
-extern crate r2d2;
-extern crate chrono;
-extern crate uuid;
-extern crate futures;
 extern crate actix;
 extern crate actix_web;
+extern crate chrono;
+#[macro_use]
+extern crate diesel;
+extern crate dotenv;
 extern crate env_logger;
+extern crate futures;
 #[macro_use]
 extern crate juniper;
-extern crate dotenv;
+extern crate r2d2;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
+extern crate uuid;
 
 use actix::prelude::*;
-use actix_web::{http, server, middleware, App, Path, State, HttpResponse,
-                AsyncResponder, FutureResponse};
+use actix_web::{http, middleware, server, App, AsyncResponder, FutureResponse, HttpResponse, Path,
+                State};
 
 use futures::future::Future;
 
@@ -30,8 +30,8 @@ mod database_queries;
 mod graphql_driver;
 mod graphql_schema;
 
-use database_driver::{CreateUser, DbExecutor, DBPool, get_db_connection_pool};
-use graphql_driver::{GraphQLExecutor};
+use database_driver::{get_db_connection_pool, CreateUser, DBPool, DbExecutor};
+use graphql_driver::GraphQLExecutor;
 
 pub struct AppState {
     db: Addr<Syn, DbExecutor>,
@@ -43,7 +43,9 @@ fn index(name: Path<String>, state: State<AppState>) -> FutureResponse<HttpRespo
     // send async `CreateUser` message to a `DbExecutor`
     state
         .db
-        .send(CreateUser { name: name.into_inner() })
+        .send(CreateUser {
+            name: name.into_inner(),
+        })
         .from_err()
         .and_then(|res| match res {
             Ok(user) => Ok(HttpResponse::Ok().json(user)),

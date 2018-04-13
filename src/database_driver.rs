@@ -1,7 +1,7 @@
 use actix_web::*;
 use actix::prelude::*;
 use diesel::prelude::*;
-use diesel::r2d2::{Pool, ConnectionManager};
+use diesel::r2d2::{ConnectionManager, Pool};
 use r2d2;
 use std;
 use dotenv;
@@ -45,7 +45,7 @@ impl Handler<CreateUser> for DbExecutor {
     type Result = Result<models::User, Error>;
 
     fn handle(&mut self, msg: CreateUser, _: &mut Self::Context) -> Self::Result {
-        use ::database_queries::db_create_user;
+        use database_queries::db_create_user;
         let conn: &SqliteConnection = &self.0.get().unwrap();
         let user = ::models::NewUser {
             name: msg.name,
@@ -54,4 +54,3 @@ impl Handler<CreateUser> for DbExecutor {
         Ok(db_create_user(&conn, &user).unwrap())
     }
 }
-

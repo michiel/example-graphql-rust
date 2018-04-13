@@ -8,9 +8,8 @@ use juniper::http::GraphQLRequest;
 use std;
 use super::{AppState, DBPool};
 
-use actix_web::{http, HttpRequest, HttpResponse,
-                HttpMessage, AsyncResponder, Error};
-use graphql_schema::{Schema, create_schema};
+use actix_web::{http, AsyncResponder, Error, HttpMessage, HttpRequest, HttpResponse};
+use graphql_schema::{create_schema, Schema};
 
 #[derive(Serialize, Deserialize)]
 pub struct GraphQLData(GraphQLRequest);
@@ -21,7 +20,7 @@ impl Message for GraphQLData {
 
 pub struct GraphQLExecutor {
     pub schema: std::sync::Arc<Schema>,
-    pub db_pool: DBPool
+    pub db_pool: DBPool,
 }
 
 impl Actor for GraphQLExecutor {
@@ -40,11 +39,9 @@ impl Handler<GraphQLData> for GraphQLExecutor {
 
 pub fn graphiql(_req: HttpRequest<AppState>) -> Result<HttpResponse, Error> {
     let html = graphiql_source("/graphql");
-    Ok(
-        HttpResponse::Ok()
-            .content_type("text/html; charset=utf-8")
-            .body(html),
-    )
+    Ok(HttpResponse::Ok()
+        .content_type("text/html; charset=utf-8")
+        .body(html))
 }
 
 pub fn graphql(req: HttpRequest<AppState>) -> Box<Future<Item = HttpResponse, Error = Error>> {
@@ -53,11 +50,9 @@ pub fn graphql(req: HttpRequest<AppState>) -> Box<Future<Item = HttpResponse, Er
         .from_err()
         .and_then(move |val: GraphQLData| {
             executor.send(val).from_err().and_then(|res| match res {
-                Ok(user) => Ok(
-                    HttpResponse::Ok()
-                        .header(http::header::CONTENT_TYPE, "application/json")
-                        .body(user),
-                ),
+                Ok(user) => Ok(HttpResponse::Ok()
+                    .header(http::header::CONTENT_TYPE, "application/json")
+                    .body(user)),
                 Err(_) => Ok(HttpResponse::InternalServerError().into()),
             })
         })
@@ -67,7 +62,6 @@ pub fn graphql(req: HttpRequest<AppState>) -> Box<Future<Item = HttpResponse, Er
 pub fn create_executor(pool: DBPool) -> Addr<Syn, GraphQLExecutor> {
     SyncArbiter::start(3, move || GraphQLExecutor {
         schema: std::sync::Arc::new(create_schema()),
-        db_pool: pool.clone()
+        db_pool: pool.clone(),
     })
 }
-

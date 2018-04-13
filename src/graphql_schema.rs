@@ -2,15 +2,15 @@ use juniper::FieldResult;
 use juniper::RootNode;
 
 use super::models::*;
-use ::graphql_driver::GraphQLExecutor;
-use ::database_queries::*;
+use graphql_driver::GraphQLExecutor;
+use database_queries::*;
 
 #[derive(GraphQLObject)]
 #[graphql(description = "Connection")]
 pub struct UserConnection {
-    #[graphql(description="This contains the User results")]
+    #[graphql(description = "This contains the User results")]
     pub edges: Vec<User>,
-    #[graphql(name="pageInfo")]
+    #[graphql(name = "pageInfo")]
     pub page_info: PageInfo,
     pub cursor: Option<String>,
 }

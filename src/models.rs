@@ -10,34 +10,34 @@ pub struct DBQueryResult<T> {
 #[derive(GraphQLObject)]
 #[graphql(description = "Page info")]
 pub struct PageInfo {
-    #[graphql(name="startCursor")]
+    #[graphql(name = "startCursor")]
     pub start_cursor: Option<String>,
-    #[graphql(name="endCursor")]
+    #[graphql(name = "endCursor")]
     pub end_cursor: Option<String>,
-    #[graphql(name="hasNextPage")]
+    #[graphql(name = "hasNextPage")]
     pub has_next_page: bool,
 }
 
-const DEFAULT_PAGE_SIZE :i32 = 20;
+const DEFAULT_PAGE_SIZE: i32 = 20;
 
 #[derive(GraphQLInputObject)]
 pub struct PagingParams {
     pub limit: Option<i32>,
-    pub cursor: Option<String>
+    pub cursor: Option<String>,
 }
 
 impl PagingParams {
     pub fn get_limit(&self) -> i32 {
         match self.limit {
             None => DEFAULT_PAGE_SIZE,
-            Some(limit) => limit
+            Some(limit) => limit,
         }
     }
 
     pub fn get_cursor(&self) -> i64 {
         match self.cursor {
             None => 0,
-            Some(ref cursor) => cursor.parse::<i64>().unwrap_or(0)
+            Some(ref cursor) => cursor.parse::<i64>().unwrap_or(0),
         }
     }
 }
