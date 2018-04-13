@@ -1,5 +1,3 @@
-//! Actix web diesel example
-//!
 extern crate actix;
 extern crate actix_web;
 extern crate chrono;
@@ -10,6 +8,7 @@ extern crate env_logger;
 extern crate futures;
 #[macro_use]
 extern crate juniper;
+extern crate num_cpus;
 extern crate r2d2;
 extern crate serde;
 #[macro_use]
@@ -60,13 +59,14 @@ fn main() {
     dotenv::dotenv().ok();
     let sys = actix::System::new("xds");
 
+    let capacity = (num_cpus::get() * 4) as usize;
+
     let server_port = std::env::var("SERVER_PORT").expect("SERVER_PORT must be set");
-    // Start http server
     server::new(move || {
         App::with_state(
             AppState{
-                db: database_driver::get_db_address(),
-                executor: graphql_driver::create_executor(get_db_connection_pool())
+                db: database_driver::get_db_address(capacity),
+                executor: graphql_driver::create_executor(capacity, get_db_connection_pool())
         })
         // enable logger
         .middleware(middleware::Logger::default())

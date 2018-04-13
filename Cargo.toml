@@ -9,6 +9,7 @@ actix = "0.5"
 actix-web = "0.5.1"
 # actix-web = { git = "https://github.com/actix/actix-web", branch = "master" }
 
+num_cpus = "1"
 futures = "0.1"
 uuid = { version = "0.5", features = ["serde", "v4"] }
 serde = "1.0"

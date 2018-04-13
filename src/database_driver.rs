@@ -17,8 +17,8 @@ pub fn get_db_connection_pool() -> DBPool {
         .expect("failed to create r2d2 pool")
 }
 
-pub fn get_db_address() -> actix::Addr<Syn, DbExecutor> {
-    SyncArbiter::start(3, move || DbExecutor(get_db_connection_pool()))
+pub fn get_db_address(capacity: usize) -> actix::Addr<Syn, DbExecutor> {
+    SyncArbiter::start(capacity, move || DbExecutor(get_db_connection_pool()))
 }
 
 pub type DBPool = Pool<ConnectionManager<SqliteConnection>>;

@@ -59,8 +59,8 @@ pub fn graphql(req: HttpRequest<AppState>) -> Box<Future<Item = HttpResponse, Er
         .responder()
 }
 
-pub fn create_executor(pool: DBPool) -> Addr<Syn, GraphQLExecutor> {
-    SyncArbiter::start(3, move || GraphQLExecutor {
+pub fn create_executor(capacity: usize, pool: DBPool) -> Addr<Syn, GraphQLExecutor> {
+    SyncArbiter::start(capacity, move || GraphQLExecutor {
         schema: std::sync::Arc::new(create_schema()),
         db_pool: pool.clone(),
     })
