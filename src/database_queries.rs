@@ -66,6 +66,10 @@ pub fn db_find_users(
         query = query.filter(dsl::uuid.eq(res));
     }
 
+    if let Some(ref res) = filter.name {
+        query = query.filter(dsl::name.eq(res));
+    }
+
     let items = query
         .filter(dsl::created_at.gt(current_cursor))
         .limit(limit)

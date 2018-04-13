@@ -29,8 +29,8 @@ graphql_object!(QueryRoot: GraphQLExecutor |&self| {
                ) -> FieldResult<UserConnection> {
 
         let conn = executor.context().db_pool.get()?;
-        let filter = filter.unwrap_or(UsersFilterParams::default());
-        let paging = paging.unwrap_or(PagingParams::default());
+        let filter = filter.unwrap_or_default();
+        let paging = paging.unwrap_or_default();
 
         let res = db_find_users(&conn, &filter, &paging)?;
 

@@ -6,8 +6,8 @@ authors = ["Michiel Kalkman <michiel@nosuchtype.com>"]
 [dependencies]
 env_logger = "0.5"
 actix = "0.5"
-# actix-web = "0.4.10"
-actix-web = { git = "https://github.com/actix/actix-web", branch = "master" }
+actix-web = "0.5.1"
+# actix-web = { git = "https://github.com/actix/actix-web", branch = "master" }
 
 futures = "0.1"
 uuid = { version = "0.5", features = ["serde", "v4"] }
