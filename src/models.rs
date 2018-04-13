@@ -3,10 +3,8 @@ use chrono;
 
 pub struct DBQueryResult<T> {
     pub items: Vec<T>,
-    pub count: i32,
     pub cursor: Option<String>,
     pub has_more: bool,
-
 }
 
 #[derive(GraphQLObject)]

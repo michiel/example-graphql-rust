@@ -8,8 +8,6 @@ use ::database_queries::*;
 #[derive(GraphQLObject)]
 #[graphql(description = "Connection")]
 pub struct UserConnection {
-    #[graphql(name="totalCount")]
-    pub total_count: i32,
     #[graphql(description="This contains the User results")]
     pub edges: Vec<User>,
     #[graphql(name="pageInfo")]
@@ -38,7 +36,6 @@ graphql_object!(QueryRoot: GraphQLExecutor |&self| {
 
         Ok(
             UserConnection {
-                total_count: res.count,
                 edges: res.items,
                 page_info: PageInfo {
                     start_cursor: None,

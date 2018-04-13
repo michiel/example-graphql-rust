@@ -51,18 +51,23 @@ pub fn db_find_user_by_uuid(conn: &SqliteConnection, uuid: &str) -> Result<User,
 }
 
 pub fn db_find_users(conn: &SqliteConnection, filter: &UsersFilterParams, paging: &PagingParams) -> Result<DBQueryResult<User>, String> {
-    use ::database_schema::users::dsl::*;
+    use ::database_schema::users::dsl;
 
     let limit = paging.get_limit() as i64;
     let current_cursor = NaiveDateTime::from_timestamp(paging.get_cursor(), 0);
 
-    let base = users.order(created_at);
-    let count = base
-        .count()
-        .get_result(&*conn);
+    let mut query = dsl::users.into_boxed().order(dsl::created_at);
 
-    let items = base
-        .filter(created_at.gt(current_cursor))
+    if let Some(ref res) = filter.active {
+        query = query.filter(dsl::active.eq(res));
+    }
+
+    if let Some(ref res) = filter.uuid {
+        query = query.filter(dsl::uuid.eq(res));
+    }
+
+    let items = query
+        .filter(dsl::created_at.gt(current_cursor))
         .limit(limit)
         .load::<User>(&*conn)
         .expect("Error loading users");
@@ -76,7 +81,6 @@ pub fn db_find_users(conn: &SqliteConnection, filter: &UsersFilterParams, paging
 
     Ok(DBQueryResult {
         items: items,
-        count: count.unwrap_or(0) as i32,
         cursor: next_cursor,
         has_more: has_more,
         })
