@@ -75,7 +75,7 @@ fn main() {
             .resource("/get/{name}", |r| r.method(http::Method::GET).with2(index))
     }).bind(&server_port)
         .expect("Unable to bind to port")
-        .threads(3)
+        .threads(num_cpus::get())
         .shutdown_timeout(2)
         .start();
 

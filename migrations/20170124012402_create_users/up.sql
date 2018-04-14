@@ -9,5 +9,5 @@ CREATE TABLE users (
 
 CREATE TRIGGER users_update_trigger AFTER UPDATE ON users
 BEGIN
-  UPDATE users SET updated_on = datetime('now') WHERE id = NEW.id;
+  UPDATE users SET updated_at = datetime('now') WHERE id = NEW.id;
 END;
