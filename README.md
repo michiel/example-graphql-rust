@@ -1,2 +1,2 @@
-# initial
+# Example Graphql API
 
